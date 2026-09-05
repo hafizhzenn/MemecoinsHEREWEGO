@@ -1,34 +1,25 @@
-# Screening Criteria
-
-This doc tracks *why* each filter exists so we can tell what's actually
-working vs. superstition, same way we tracked the BTC bot's filters.
-
-## Stage 1 — Safety filter (hard reject if failed)
-| Check | Why |
-|---|---|
-| LP liquidity locked or burned | Prevents dev pulling liquidity (rug) |
-| Mint authority renounced | Prevents dev minting infinite supply |
-| Top 10 holders < 30% of supply (excl. LP) | Reduces dump risk from whales |
-| Min liquidity (e.g. $10k+) | Avoids unsellable illiquid tokens |
-| Contract age > X minutes | Avoids instant-rug sniper bait |
-
-## Stage 2 — Momentum score (0–100)
-| Signal | Weight | Why |
+## Weights as implemented (v0.1)
+| Component | Weight | Rationale |
 |---|---|---|
-| Volume growth (5m/1h) | TBD | Early momentum indicator |
-| Unique buyer growth | TBD | Distinguishes real interest from wash trading |
-| Buy/sell ratio | TBD | Net buying pressure |
-| Holder count growth | TBD | Organic spread vs. bot activity |
+| volume_acceleration | 25% | Earliest real signal of interest; hard to fake cheaply at scale |
+| liquidity_health | 20% | Liq/mcap ratio — the single best predictor of "can I actually exit" |
+| buy_pressure | 20% | Net buying, but capped: >85% buys usually means wash trading, not demand |
+| trader_breadth | 15% | Many distinct txns = organic spread, few large = one whale |
+| age_sweet_spot | 10% | <1h is the instant-rug window; >48h and the move already happened |
+| price_momentum | 10% | Deliberately low weight — price is the *result* of the others, not a cause |
 
-## Stage 3 — Sizing & exit rules
-- Position size: TBD (likely % of bankroll, smaller than the BTC bot given
-  higher variance)
-- Take-profit / stop-loss: TBD
-- Max concurrent positions: TBD
+## Why scoring runs before the safety check
+Birdeye calls cost compute units. Scoring is free (Dexscreener data already
+in hand), so we score everything and only spend API budget on the top 10.
 
-## Open questions
-- How do we distinguish organic hype from coordinated pump groups?
-- What's a realistic winrate target given no historical edge is proven yet?
+## Things this deliberately does NOT do
+- No auto-trading. Execution stays manual.
+- No conviction-weighted sizing. Fat-tailed payoffs mean position count
+  matters more than picking the "best" one.
+- No detection of coordinated pumps or dev intent. Structurally impossible
+  from public market data alone.
 
-## Change log
-- 2026-09-06: Initial criteria drafted, no live data yet.
+- 2026-09-06: Full pipeline — discovery, weighted momentum scorer, tiered sizing,
+  laddered exits, Telegram/console alerts, SQLite paper trade tracker with
+  winrate-by-tier reporting. All weights are first guesses; do NOT tune them
+  by intuition, tune them against logged paper trade results.
