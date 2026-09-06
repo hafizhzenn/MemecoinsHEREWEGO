@@ -57,7 +57,20 @@ def load_wallets() -> list[dict]:
             and w["address"] != "PASTE_WALLET_ADDRESS_HERE"]
 
 
+_tx_cache: dict[str, tuple[float, list[dict]]] = {}
+CACHE_TTL_SECONDS = 240
+
+
 def get_wallet_txs(address: str, limit: int = 100, swaps_only: bool = True) -> list[dict]:
+    cached = _tx_cache.get(address)
+    if cached and time.time() - cached[0] < CACHE_TTL_SECONDS:
+        return cached[1]
+    result = _fetch_wallet_txs(address, limit, swaps_only)
+    _tx_cache[address] = (time.time(), result)
+    return result
+
+
+def _fetch_wallet_txs(address: str, limit: int = 100, swaps_only: bool = True) -> list[dict]:
     """
     Recent parsed transactions for one wallet.
     swaps_only filters server-side, which keeps the response small without
@@ -84,7 +97,6 @@ def get_wallet_txs(address: str, limit: int = 100, swaps_only: bool = True) -> l
         return []
 
     return resp.json().get("data") or []
-
 
 def extract_buys(txs: list[dict], within_hours: float = 6) -> list[dict]:
     """

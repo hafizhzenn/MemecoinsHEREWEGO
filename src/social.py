@@ -85,9 +85,6 @@ DEFAULT_QUERIES = [
     "solana memecoin min_faves:15 -filter:replies",
     "pump.fun min_faves:15 -filter:replies",
     "solana CA min_faves:20 -filter:replies",
-    "solana gem min_faves:15 -filter:replies",
-    "(sol OR solana) ape min_faves:20 -filter:replies",
-    "bonk OR pumpfun OR letsbonk min_faves:15 -filter:replies",
 ]
 
 SPIKE_MIN_MENTIONS = 5      # below this it's noise regardless of ratio

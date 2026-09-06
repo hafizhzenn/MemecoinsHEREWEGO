@@ -29,7 +29,7 @@ from flask import Flask, jsonify, render_template_string
 
 load_dotenv()
 
-from src import analysis, smartmoney, social, tracker  # noqa: E402
+from src import analysis, live, smartmoney, social, tracker  # noqa: E402
 from src.main import manage_open_positions, scan_once, scan_smart_money  # noqa: E402
 
 MOMENTUM_INTERVAL = int(os.getenv("SCAN_INTERVAL_SECONDS", "300"))
@@ -792,6 +792,13 @@ def main() -> None:
               f"(~${(86400 / SOCIAL_INTERVAL) * 3 * 20 * 30 * 0.00015:,.0f}/month at twitterapi.io rates)")
     else:
         print("[dashboard] X monitoring off (no TWITTERAPI_IO_KEY)")
+
+    watched = live.load_watch_list()
+    if watched:
+        print(f"[dashboard] live watching {len(watched)} wallet(s) over WebSocket")
+        threading.Thread(target=live.run, daemon=True).start()
+    else:
+        print('[dashboard] no wallets marked "live": true — real-time watch off')
 
     threading.Thread(target=momentum_loop, daemon=True).start()
     threading.Thread(target=smartmoney_loop, daemon=True).start()
